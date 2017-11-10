@@ -14,7 +14,7 @@ queries all projects and displays their names:
 ```javascript
 var HydraConnector = require('hydra-connector').HydraConnector;
 
-hydraConnector = new HydraConnector("http://localhost");
+var hydraConnector = new HydraConnector("http://localhost");
 
 hydraConnector.queryProjects(function(err, projects) {
     if(err) {
@@ -60,7 +60,37 @@ to the `HydraConnector` constructor:
 ```javascript
 var HydraConnector = require('hydra-connector').HydraConnector;
 
-hydraConnector = new HydraConnector("http://localhost", "sander", "12345"); // HTTP basic credentials
+var hydraConnector = new HydraConnector("http://localhost", "sander", "12345"); // HTTP basic credentials
+```
+
+Command-line utility usage
+==========================
+This package also includes a command-line utility using the API to communicate
+with a Hydra instance from the command-line.
+
+```bash
+$ hydra-connect --help
+```
+
+When using the tool, you typically want to start with an overview of projects:
+
+```bash
+$ hydra-connect --url http://localhost --projects
+```
+
+For each request, the tool will provide command suggestions that can be used to
+obtain more detailed information, such as querying the properties of an
+individual project:
+
+```bash
+$ hydra-connect --url http://localhost --project MyProject
+```
+
+All requests that display information can also provide the underlying JSON
+representation that comes from Hydra's REST API:
+
+```bash
+$ hydra-connect --url http://localhost --project MyProject --json
 ```
 
 API documentation

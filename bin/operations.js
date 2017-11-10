@@ -79,6 +79,8 @@ function queryProjects(hydraSettings, callback) {
                 console.log("\nSome suggestions:");
                 console.log("=================");
                 console.log(hydraSettings.executable + " --project ID [OPTION]    Query project properties");
+                console.log(hydraSettings.executable + " --queue [OPTION]         Show queue contents");
+                console.log(hydraSettings.executable + " --status [OPTION]        Show running jobs in queue");
             }
 
             callback();
