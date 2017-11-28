@@ -77,10 +77,18 @@ var switches = [
     ['--eval ID', 'Shows the properties of an evaluation'],
     ['--build ID', 'Shows the properties of a build'],
     ['--build-product ID', 'Fetches a build product'],
+    ['--reproduce', 'Fetches a reproduce script of a build'],
+    ['--restart', 'Restarts a failed build'],
+    ['--cancel', 'Cancels a scheduled build'],
+    ['--bump', 'Bump build priority'],
+    ['--keep', 'Keep build product'],
     ['--raw-log', 'Fetches the raw log of a build'],
     ['--queue', 'Fetches an overview of all builds in the queue'],
     ['--status', 'Fetches an overview of all running builds in the queue'],
-    ['--json', 'Display the output in JSON format']
+    ['--num-of-builds', 'Shows the amount of builds in the queue'],
+    ['--json', 'Display the output in JSON format'],
+    ['--modify', 'Creates or updates a record'],
+    ['--delete', 'Deletes a record']
 ];
 
 var parser = new optparse.OptionParser(switches);
@@ -163,6 +171,26 @@ parser.on('build-product', function(arg, value) {
     buildProductId = value;
 });
 
+parser.on('reproduce', function(arg, value) {
+    operation = "reproduce";
+});
+
+parser.on('restart', function(arg, value) {
+    operation = "restart-build";
+});
+
+parser.on('cancel', function(arg, value) {
+    operation = "cancel-build";
+});
+
+parser.on('bump', function(arg, value) {
+    operation = "bump-build";
+});
+
+parser.on('keep', function(arg, value) {
+    operation = "keep-build-product";
+});
+
 parser.on('raw-log', function(arg, value) {
     operation = "raw-log";
 });
@@ -173,6 +201,36 @@ parser.on('queue', function(arg, value) {
 
 parser.on('status', function(arg, value) {
     operation = "status";
+});
+
+parser.on('num-of-builds', function(arg, value) {
+    operation = "num-of-builds";
+});
+
+parser.on('modify', function(arg, value) {
+    switch(operation) {
+        case "project":
+            operation = "modify-project";
+            break;
+        case "jobset":
+            operation = "modify-jobset";
+            break;
+        default:
+            throw "I don't know what kind of record to modify!";
+    }
+});
+
+parser.on('delete', function(arg, value) {
+    switch(operation) {
+        case "project":
+            operation = "delete-project";
+            break;
+        case "jobset":
+            operation = "delete-jobset";
+            break;
+        default:
+            throw "I don't know what kind of record to delete!";
+    }
 });
 
 /* Define process rules for non-option parameters */
@@ -232,8 +290,20 @@ switch(operation) {
     case "project":
         operations.queryProject(hydraSettings, projectId, exitCallback);
         break;
+    case "modify-project":
+        operations.modifyProject(hydraSettings, projectId, exitCallback);
+        break;
+    case "delete-project":
+        operations.deleteProject(hydraSettings, projectId, exitCallback);
+        break;
     case "jobset":
         operations.queryJobset(hydraSettings, projectId, jobsetId, exitCallback);
+        break;
+    case "modify-jobset":
+        operations.modifyJobset(hydraSettings, projectId, jobsetId, exitCallback);
+        break;
+    case "delete-jobset":
+        operations.deleteJobset(hydraSettings, projectId, jobsetId, exitCallback);
         break;
     case "evals":
         operations.queryEvaluations(hydraSettings, projectId, jobsetId, exitCallback);
@@ -247,14 +317,32 @@ switch(operation) {
     case "build-product":
         operations.downloadBuildProduct(hydraSettings, buildId, buildProductId, exitCallback);
         break;
+    case "keep-build-product":
+        operations.keepBuildProduct(hydraSettings, buildId, buildProductId, exitCallback);
+        break;
     case "raw-log":
         operations.downloadRawBuildLog(hydraSettings, buildId, exitCallback);
+        break;
+    case "reproduce":
+        operations.downloadBuildReproduceScript(hydraSettings, buildId, exitCallback);
+        break;
+    case "restart-build":
+        operations.restartBuild(hydraSettings, buildId, exitCallback);
+        break;
+    case "cancel-build":
+        operations.cancelBuild(hydraSettings, buildId, exitCallback);
+        break;
+    case "bump-build":
+        operations.bumpBuildPriority(hydraSettings, buildId, exitCallback);
         break;
     case "queue":
         operations.showQueue(hydraSettings, exitCallback);
         break;
     case "status":
         operations.showStatus(hydraSettings, exitCallback);
+        break;
+    case "num-of-builds":
+        operations.showNumOfBuildsInQueue(hydraSettings, exitCallback);
         break;
     default:
         process.stderr.write("Unknown operation: "+operation);

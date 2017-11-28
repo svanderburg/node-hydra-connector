@@ -1,6 +1,5 @@
 var slasp = require('slasp');
-var prom2cb = require('prom2cb');
-var prompt = require('password-prompt');
+var prompt = require('prompt');
 var HydraConnector = require('../lib/HydraConnector.js').HydraConnector;
 
 function constructHydraConnector(hydraSettings) {
@@ -14,19 +13,23 @@ function login(hydraSettings, callback) {
     var username;
     var password;
 
+    prompt.start();
+
     slasp.sequence([
         function(callback) {
-            prom2cb.chainCallback(prompt('username: ', { method: "hide" }), callback);
+            prompt.get([
+                {
+                    name: 'username',
+                    required: true
+                }, {
+                    name: 'password',
+                    hidden: true
+                }
+            ], callback);
         },
 
-        function(callback, _username) {
-            username = _username;
-            prom2cb.chainCallback(prompt('password: ', { method: "hide" }), callback);
-        },
-
-        function(callback, _password) {
-            password = _password;
-            hydraConnector.login(username, password, callback);
+        function(callback, results) {
+            hydraConnector.login(results.username, results.password, callback);
         },
 
         function(callback) {
@@ -81,6 +84,7 @@ function queryProjects(hydraSettings, callback) {
                 console.log(hydraSettings.executable + " --project ID [OPTION]    Query project properties");
                 console.log(hydraSettings.executable + " --queue [OPTION]         Show queue contents");
                 console.log(hydraSettings.executable + " --status [OPTION]        Show running jobs in queue");
+                console.log(hydraSettings.executable + " --num-of-builds [OPTION] Show number of builds in queue");
             }
 
             callback();
@@ -132,6 +136,8 @@ function queryProject(hydraSettings, projectId, callback) {
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
+                console.log(hydraSettings.executable + " --project ID --modify                Create or modify a project");
+                console.log(hydraSettings.executable + " --project ID --delete                Delete a project");
                 console.log(hydraSettings.executable + " --project ID --jobset ID [OPTION]    Query jobset properties");
             }
 
@@ -141,6 +147,47 @@ function queryProject(hydraSettings, projectId, callback) {
 }
 
 exports.queryProject = queryProject;
+
+function modifyProject(hydraSettings, projectId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+
+    prompt.start();
+
+    slasp.sequence([
+        function(callback) {
+            prompt.get([
+                {
+                    name: 'displayname'
+                }, {
+                    name: 'description'
+                }, {
+                    name: 'homepage'
+                }, {
+                    name: 'visible',
+                    message: 'visible should be 0 or 1',
+                    required: true
+                }, {
+                    name: 'enabled',
+                    message: 'enabled should be 0 or 1',
+                    required: true
+                }
+            ], callback);
+        },
+
+        function(callback, properties) {
+            hydraConnector.createOrUpdateProject(projectId, properties, callback);
+        }
+    ], callback);
+}
+
+exports.modifyProject = modifyProject;
+
+function deleteProject(hydraSettings, projectId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.deleteProject(projectId, callback);
+}
+
+exports.deleteProject = deleteProject;
 
 function queryJobset(hydraSettings, projectId, jobsetId, callback) {
     var hydraConnector = constructHydraConnector(hydraSettings);
@@ -178,6 +225,8 @@ function queryJobset(hydraSettings, projectId, jobsetId, callback) {
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
+                console.log(hydraSettings.executable + " --project ID --jobset ID --modify            Create or update jobset");
+                console.log(hydraSettings.executable + " --project ID --jobset ID --delete            Delete a jobset");
                 console.log(hydraSettings.executable + " --project ID --jobset ID --evals [OPTION]    Query evaluations");
             }
 
@@ -187,6 +236,101 @@ function queryJobset(hydraSettings, projectId, jobsetId, callback) {
 }
 
 exports.queryJobset = queryJobset;
+
+function modifyJobset(hydraSettings, projectId, jobsetId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    var jobsetProperties;
+    var inputs = {};
+
+    prompt.start();
+
+    slasp.sequence([
+        function(callback) {
+            prompt.get([
+                {
+                    name: 'name'
+                }, {
+                    name: 'description'
+                }, {
+                    name: 'nixexprinput'
+                }, {
+                    name: 'nixexprpath'
+                }, {
+                    name: 'emailoverride'
+                }, {
+                    name: 'visible',
+                    message: 'visible should be 0 or 1',
+                    required: true
+                }, {
+                    name: 'enabled',
+                    message: 'enabled should be 0 or 1',
+                    required: true
+                }, {
+                    name: 'keepnr'
+                }, {
+                    name: 'checkinterval'
+                }, {
+                    name: 'schedulingshares'
+                }
+            ], callback);
+        },
+
+        function(callback, properties) {
+            jobsetProperties = properties;
+
+            console.log("\nConfiguring inputs. Specify an empty name to stop\n");
+
+            var input;
+
+            slasp.doWhilst(function(callback) {
+                prompt.get([
+                    {
+                        name: 'name'
+                    },
+                    {
+                        name: 'type'
+                    },
+                    {
+                        name: 'value'
+                    }
+                ], function(err, results) {
+                    console.log();
+
+                    if(err) {
+                        callback(err);
+                    } else {
+                        input = results;
+                        callback();
+                    }
+                });
+            }, function(callback) {
+                if(input.name) {
+                    inputs[input.name] = {
+                        type: input.type,
+                        value: input.value
+                    };
+                    callback(null, true);
+                } else {
+                    callback(null, false);
+                }
+            }, callback);
+        },
+
+        function(callback) {
+            jobsetProperties.inputs = inputs;
+            hydraConnector.createOrUpdateJobset(projectId, jobsetId, jobsetProperties, callback);
+        }
+    ], callback);
+}
+
+exports.modifyJobset = modifyJobset;
+
+function deleteJobset(hydraSettings, projectId, jobsetId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.deleteJobset(projectId, jobsetId, callback);
+}
+
+exports.deleteJobset = deleteJobset;
 
 function queryEvaluations(hydraSettings, projectId, jobsetId, callback) {
     var hydraConnector = constructHydraConnector(hydraSettings);
@@ -336,9 +480,13 @@ function queryBuild(hydraSettings, buildId, callback) {
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
-                console.log(hydraSettings.executable + " --eval ID [OPTION]                      Query evaluation properties");
-                console.log(hydraSettings.executable + " --build ID --raw-log [OPTION]           Download raw build log");
-                console.log(hydraSettings.executable + " --build ID --build-product ID [OPTION]  Download build product");
+                console.log(hydraSettings.executable + " --eval ID [OPTION]                             Query evaluation properties");
+                console.log(hydraSettings.executable + " --build ID --raw-log [OPTION]                  Download raw build log");
+                console.log(hydraSettings.executable + " --build ID --restart [OPTION]                  Restart failed build");
+                console.log(hydraSettings.executable + " --build ID --cancel [OPTION]                   Cancel scheduled build");
+                console.log(hydraSettings.executable + " --build ID --bump [OPTION]                     Bump build priority");
+                console.log(hydraSettings.executable + " --build ID --build-product ID [OPTION]         Download build product");
+                console.log(hydraSettings.executable + " --build ID --build-product ID --keep [OPTION]  Keep build product");
 
                 callback();
             }
@@ -352,19 +500,52 @@ exports.queryBuild = queryBuild;
 
 function downloadBuildProduct(hydraSettings, buildId, buildProductId, callback) {
     var hydraConnector = constructHydraConnector(hydraSettings);
-
     hydraConnector.downloadBuildProduct(buildId, buildProductId, process.stdout, callback);
 }
 
 exports.downloadBuildProduct = downloadBuildProduct;
 
-function downloadRawBuildLog(hydraSettings, buildId, url, callback) {
+function keepBuildProduct(hydraSettings, buildId, buildProductId, callback) {
     var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.keepBuildProduct(buildId, buildProductId, callback);
+}
 
+exports.keepBuildProduct = keepBuildProduct;
+
+function downloadRawBuildLog(hydraSettings, buildId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
     hydraConnector.downloadRawBuildLog(buildId, process.stdout, callback);
 }
 
 exports.downloadRawBuildLog = downloadRawBuildLog;
+
+function downloadBuildReproduceScript(hydraSettings, buildId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.downloadBuildReproduceScript(buildId, process.stdout, callback);
+}
+
+exports.downloadBuildReproduceScript = downloadBuildReproduceScript;
+
+function restartBuild(hydraSettings, buildId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.restartBuild(buildId, callback);
+}
+
+exports.restartBuild = restartBuild;
+
+function cancelBuild(hydraSettings, buildId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.cancelBuild(buildId, callback);
+}
+
+exports.cancelBuild = cancelBuild;
+
+function bumpBuildPriority(hydraSettings, buildId, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.bumpBuildPriority(buildId, callback);
+}
+
+exports.bumpBuildPriority = bumpBuildPriority;
 
 function displayQueue(hydraSettings, queue) {
     for(var i = 0; i < queue.length; i++) {
@@ -420,3 +601,20 @@ function showStatus(hydraSettings, callback) {
 }
 
 exports.showStatus = showStatus;
+
+function showNumOfBuildsInQueue(hydraSettings, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+
+    slasp.sequence([
+        function(callback) {
+            hydraConnector.showNumOfBuildsInQueue(callback);
+        },
+
+        function(callback, result) {
+            console.log(result);
+            callback();
+        }
+    ], callback);
+}
+
+exports.showNumOfBuildsInQueue = showNumOfBuildsInQueue;

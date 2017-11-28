@@ -5,9 +5,8 @@
   "dependencies": {
     "node-rest-client": "3.1.x",
     "optparse": "1.0.x",
-    "password-prompt": "1.0.x",
     "slasp": "0.0.4",
-    "prom2cb": "0.0.2"
+    "prompt": "1.0.x"
   },
   "devDependencies": {
     "mocha": "*",
