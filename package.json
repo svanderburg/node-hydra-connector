@@ -1,6 +1,6 @@
 {
   "name": "node-hydra-connector",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Node.js module that allows remote control of a Hydra instance: a Nix-based continuous integration service",
   "dependencies": {
     "node-rest-client": "3.1.x",
@@ -20,5 +20,11 @@
   "main": "./lib/HydraConnector.js",
   "bin": {
     "hydra-connect": "bin/hydra-connect.js"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/svanderburg/node-hydra-connector.git"
+  },
+  "author": "Sander van der Burg <svanderburg@gmail.com>",
+  "license": "MIT"
 }

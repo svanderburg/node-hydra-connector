@@ -5,6 +5,63 @@ var path = require('path');
 var optparse = require('optparse');
 var operations = require('./operations.js');
 
+/* Displays the help text */
+
+function displayHelp(executable) {
+    function displayTab(len, maxlen) {
+        for(var i = 0; i < maxlen - len; i++) {
+            process.stdout.write(" ");
+        }
+    }
+
+    process.stdout.write("Usage: " + executable + " --url URL [OPTION]\n\n");
+
+    process.stdout.write("Remotely controls a Hydra continuous integration service instance through the\n");
+    process.stdout.write("command-line and Hydra's REST API.\n\n");
+
+    process.stdout.write("If you don't know what option to pick, start with --projects to query a project\n");
+    process.stdout.write("overview. The tool will provide suggestions for successive operations that\n");
+    process.stdout.write("you can execute.\n\n");
+
+    process.stdout.write("Options:\n");
+
+    var maxlen = 30;
+
+    for(var i = 0; i < switches.length; i++) {
+
+        var currentSwitch = switches[i];
+
+        process.stdout.write("  ");
+
+        if(currentSwitch.length == 3) {
+            process.stdout.write(currentSwitch[0] + ", "+currentSwitch[1]);
+            displayTab(currentSwitch[0].length + 2 + currentSwitch[1].length, maxlen);
+            process.stdout.write(currentSwitch[2]);
+        } else {
+            process.stdout.write(currentSwitch[0]);
+            displayTab(currentSwitch[0].length, maxlen);
+            process.stdout.write(currentSwitch[1]);
+        }
+
+        process.stdout.write("\n");
+    }
+
+    process.stdout.write("\nEnvironment:\n");
+    process.stdout.write("  HYDRA_SESSION              Memorizes an authenticated Hydra session id\n");
+    process.stdout.write("  HYDRA_HTTP_BASIC_USERNAME  Memorizes a HTTP basic username\n");
+    process.stdout.write("  HYDRA_HTTP_BASIC_PASSWORD  Memorizes a HTTP basic password\n");
+    process.exit(0);
+}
+
+/* Display the version, if it has been requested */
+
+function displayVersion() {
+    var version = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "package.json"))).version;
+
+    process.stdout.write("hydra-connect " + version + "\n");
+    process.exit(0);
+}
+
 /* Define command-line options */
 
 var switches = [
@@ -128,6 +185,17 @@ parser.on(1, function(opt) {
 
 parser.parse(process.argv);
 
+/* Check for the help or version parameters */
+
+switch(operation) {
+    case "help":
+        displayHelp(hydraSettings.executable);
+        break;
+    case "version":
+        displayVersion();
+        break;
+}
+
 /* Verify the input parameters */
 
 if(hydraSettings.url === null) {
@@ -139,64 +207,6 @@ if(operation === null) {
     process.stderr.write("No operation has been specified!\n");
     process.exit(1);
 }
-
-/* Displays the help text */
-
-function displayHelp(executable) {
-    function displayTab(len, maxlen) {
-        for(var i = 0; i < maxlen - len; i++) {
-            process.stdout.write(" ");
-        }
-    }
-
-    process.stdout.write("Usage: " + executable + " --url URL [OPTION]\n\n");
-
-    process.stdout.write("Remotely controls a Hydra continuous integration service instance through the\n");
-    process.stdout.write("command-line and Hydra's REST API.\n\n");
-
-    process.stdout.write("If you don't know what option to pick, start with --projects to query a project\n");
-    process.stdout.write("overview. The tool with provide suggestions about what successive operations\n");
-    process.stdout.write("you can execute.\n\n");
-
-    process.stdout.write("Options:\n");
-
-    var maxlen = 30;
-
-    for(var i = 0; i < switches.length; i++) {
-
-        var currentSwitch = switches[i];
-
-        process.stdout.write("  ");
-
-        if(currentSwitch.length == 3) {
-            process.stdout.write(currentSwitch[0] + ", "+currentSwitch[1]);
-            displayTab(currentSwitch[0].length + 2 + currentSwitch[1].length, maxlen);
-            process.stdout.write(currentSwitch[2]);
-        } else {
-            process.stdout.write(currentSwitch[0]);
-            displayTab(currentSwitch[0].length, maxlen);
-            process.stdout.write(currentSwitch[1]);
-        }
-
-        process.stdout.write("\n");
-    }
-
-    process.stdout.write("\nEnvironment:\n");
-    process.stdout.write("  HYDRA_SESSION              Memorizes an authenticated Hydra session id\n");
-    process.stdout.write("  HYDRA_HTTP_BASIC_USERNAME  Memorizes a HTTP basic username\n");
-    process.stdout.write("  HYDRA_HTTP_BASIC_PASSWORD  Memorizes a HTTP basic password\n");
-    process.exit(0);
-}
-
-/* Display the version, if it has been requested */
-
-function displayVersion() {
-    var version = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "package.json"))).version;
-
-    process.stdout.write("hydra-connect " + version + "\n");
-    process.exit(0);
-}
-
 
 /* Perform the desired operation */
 
@@ -210,12 +220,6 @@ function exitCallback(err) {
 }
 
 switch(operation) {
-    case "help":
-        displayHelp(hydraSettings.executable);
-        break;
-    case "version":
-        displayVersion();
-        break;
     case "login":
         operations.login(hydraSettings, exitCallback);
         break;
