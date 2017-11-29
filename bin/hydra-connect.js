@@ -86,6 +86,9 @@ var switches = [
     ['--queue', 'Fetches an overview of all builds in the queue'],
     ['--status', 'Fetches an overview of all running builds in the queue'],
     ['--num-of-builds', 'Shows the amount of builds in the queue'],
+    ['--clear-vcs-cache', 'Clears the VCS cache'],
+    ['--clear-failed-cache', 'Clears the failed builds cache'],
+    ['--clear-non-current', 'Clears all non current builds from the queue'],
     ['--json', 'Display the output in JSON format'],
     ['--modify', 'Creates or updates a record'],
     ['--delete', 'Deletes a record']
@@ -205,6 +208,18 @@ parser.on('status', function(arg, value) {
 
 parser.on('num-of-builds', function(arg, value) {
     operation = "num-of-builds";
+});
+
+parser.on('clear-vcs-cache', function(arg, value) {
+    operation = "clear-vcs-cache";
+});
+
+parser.on('clear-failed-cache', function(arg, value) {
+    operation = "clear-failed-cache";
+});
+
+parser.on('clear-non-current', function(arg, value) {
+    operation = "clear-non-current";
 });
 
 parser.on('modify', function(arg, value) {
@@ -343,6 +358,15 @@ switch(operation) {
         break;
     case "num-of-builds":
         operations.showNumOfBuildsInQueue(hydraSettings, exitCallback);
+        break;
+    case "clear-vcs-cache":
+        operations.clearVCSCaches(hydraSettings, exitCallback);
+        break;
+    case "clear-failed-cache":
+        operations.clearFailedBuildsCache(hydraSettings, exitCallback);
+        break;
+    case "clear-non-current":
+        operations.clearNonCurrentBuildsFromQueue(hydraSettings, exitCallback);
         break;
     default:
         process.stderr.write("Unknown operation: "+operation);

@@ -81,10 +81,13 @@ function queryProjects(hydraSettings, callback) {
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
-                console.log(hydraSettings.executable + " --project ID [OPTION]    Query project properties");
-                console.log(hydraSettings.executable + " --queue [OPTION]         Show queue contents");
-                console.log(hydraSettings.executable + " --status [OPTION]        Show running jobs in queue");
-                console.log(hydraSettings.executable + " --num-of-builds [OPTION] Show number of builds in queue");
+                console.log(hydraSettings.executable + " --project ID [OPTION]         Query project properties");
+                console.log(hydraSettings.executable + " --queue [OPTION]              Show queue contents");
+                console.log(hydraSettings.executable + " --status [OPTION]             Show running jobs in queue");
+                console.log(hydraSettings.executable + " --num-of-builds [OPTION]      Show number of builds in queue");
+                console.log(hydraSettings.executable + " --clear-vcs-cache [OPTION]    Clears the VCS caches");
+                console.log(hydraSettings.executable + " --clear-failed-cache [OPTION] Clears the failed build cache");
+                console.log(hydraSettings.executable + " --clear-non-current [OPTION]  Clears all non current builds from the queue");
             }
 
             callback();
@@ -136,8 +139,8 @@ function queryProject(hydraSettings, projectId, callback) {
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
-                console.log(hydraSettings.executable + " --project ID --modify                Create or modify a project");
-                console.log(hydraSettings.executable + " --project ID --delete                Delete a project");
+                console.log(hydraSettings.executable + " --project ID --modify [OPTION]       Create or modify a project");
+                console.log(hydraSettings.executable + " --project ID --delete [OPTION]       Delete a project");
                 console.log(hydraSettings.executable + " --project ID --jobset ID [OPTION]    Query jobset properties");
             }
 
@@ -225,8 +228,8 @@ function queryJobset(hydraSettings, projectId, jobsetId, callback) {
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
-                console.log(hydraSettings.executable + " --project ID --jobset ID --modify            Create or update jobset");
-                console.log(hydraSettings.executable + " --project ID --jobset ID --delete            Delete a jobset");
+                console.log(hydraSettings.executable + " --project ID --jobset ID --modify [OPTION]   Create or update jobset");
+                console.log(hydraSettings.executable + " --project ID --jobset ID --delete [OPTION]   Delete a jobset");
                 console.log(hydraSettings.executable + " --project ID --jobset ID --evals [OPTION]    Query evaluations");
             }
 
@@ -618,3 +621,24 @@ function showNumOfBuildsInQueue(hydraSettings, callback) {
 }
 
 exports.showNumOfBuildsInQueue = showNumOfBuildsInQueue;
+
+function clearVCSCaches(hydraSettings, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.clearVCSCaches(callback);
+}
+
+exports.clearVCSCaches = clearVCSCaches;
+
+function clearFailedBuildsCache(hydraSettings, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.clearFailedBuildsCache(callback);
+}
+
+exports.clearFailedBuildsCache = clearFailedBuildsCache;
+
+function clearNonCurrentBuildsFromQueue(hydraSettings, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+    hydraConnector.clearNonCurrentBuildsFromQueue(callback);
+}
+
+exports.clearNonCurrentBuildsFromQueue = clearNonCurrentBuildsFromQueue;
