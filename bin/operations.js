@@ -1,6 +1,47 @@
 var slasp = require('slasp');
 var prompt = require('prompt');
+var Table = require('cli-table');
 var HydraConnector = require('../lib/HydraConnector.js').HydraConnector;
+
+function prefixZero(value) {
+    if(value < 10) {
+        return "0"+value;
+    } else {
+        return value;
+    }
+}
+
+function displayDateAndTime(timestamp) {
+    var dateObj = new Date(timestamp * 1000);
+
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    var year = dateObj.getFullYear();
+    var month = months[dateObj.getMonth()];
+    var day = dateObj.getDate();
+    var hour = prefixZero(dateObj.getHours());
+    var min = prefixZero(dateObj.getMinutes());
+    var sec = prefixZero(dateObj.getSeconds());
+
+    return day + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec;
+}
+
+function displayBuildStatus(buildstatus) {
+    if(buildstatus === null) {
+        return "";
+    } else {
+        switch(buildstatus) {
+            case 0:
+                return "Success";
+            case 1:
+                return "Failed";
+            case 2:
+                return "Dependency failed";
+            default:
+                return "Unknown status: "+buildstatus;
+        }
+    }
+}
 
 function constructHydraConnector(hydraSettings) {
     var hydraConnector = new HydraConnector(hydraSettings.url);
@@ -74,10 +115,16 @@ function queryProjects(hydraSettings, callback) {
             if(hydraSettings.showJSON) {
                 console.log(JSON.stringify(projects, null, 2));
             } else {
+                var table = new Table({
+                    head: ['Name', 'Display name', 'Description']
+                });
+
                 for(var i = 0; i < projects.length; i++) {
                     var project = projects[i];
-                    console.log(project.name + " | " + project.displayname + " | " + project.description);
+                    table.push([project.name, project.displayname, project.description]);
                 }
+
+                console.log(table.toString());
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
@@ -111,30 +158,43 @@ function queryProject(hydraSettings, projectId, callback) {
             } else {
                 console.log("Configuration");
                 console.log("=============");
-                console.log("Project ID: "+projectId);
-                console.log("Display name: "+project.displayname);
-                console.log("Description: "+project.description);
-                console.log("Owner: "+project.owner);
-                console.log("Enabled: "+project.enabled);
+
+                var table = new Table();
+                table.push({ "Project ID": projectId });
+                table.push({ "Display name": project.displayname });
+                table.push({ "Description": project.description });
+                table.push({ "Owner": project.owner });
+                table.push({ "Enabled": project.enabled });
+                console.log(table.toString());
 
                 if(Array.isArray(project.jobsets) && project.jobsets.length > 0) {
                     console.log("\nJobsets");
                     console.log("=======");
 
+                    var table = new Table({
+                        head: [ "Jobsets" ]
+                    });
+
                     for(var i = 0; i < project.jobsets.length; i++) {
-                        var jobsetId = project.jobsets[i];
-                        console.log(jobsetId);
+                        table.push([ project.jobsets[i] ]);
                     }
+
+                    console.log(table.toString());
                 }
 
                 if(Array.isArray(project.releases) && project.releases.length > 0) {
                     console.log("\nReleases");
                     console.log("========");
 
+                    var table = new Table({
+                        head: [ "Releases" ]
+                    });
+
                     for(var i = 0; i < project.releases.length; i++) {
-                        var releaseId = project.releases[i];
-                        console.log(releaseId);
+                        table.push([ project.releases[i] ]);
                     }
+
+                    console.log(table.toString());
                 }
 
                 console.log("\nSome suggestions:");
@@ -204,22 +264,29 @@ function queryJobset(hydraSettings, projectId, jobsetId, callback) {
             if(hydraSettings.showJSON) {
                 console.log(JSON.stringify(jobset, null, 2));
             } else {
-                console.log("Configuration");
-                console.log("=============");
-                console.log("Project ID: "+projectId);
-                console.log("Jobset ID: "+jobsetId);
-                console.log("Enabled: "+jobset.enabled);
-                console.log("Nix expression: "+jobset.nixexprpath+" in input: "+jobset.nixexprinput);
-                console.log("Email override: "+jobset.emailoverride);
+                var table = new Table();
+                table.push({ "Project ID": projectId });
+                table.push({ "Jobset ID": jobsetId });
+                table.push({ "Enabled": jobset.enabled });
+                table.push({ "Nix expression": jobset.nixexprpath+" in input: "+jobset.nixexprinput });
+                table.push({ "Email override": jobset.emailoverride });
 
-                if(Object.keys(jobset.jobsetinputs) > 0) {
-                    console.log("\nInputs:");
-                    console.log("=======");
+                console.log(table.toString());
+
+                if(Object.keys(jobset.jobsetinputs).length > 0) {
+                    console.log("\nInputs");
+                    console.log("======");
+
+                    var table = new Table({
+                        head: [ "Input name", "Input value" ]
+                    });
 
                     for(var inputName in jobset.jobsetinputs) {
-                        var input = jobset.jobsetinputs[i];
-                        console.log(inputName + ": " + input.jobsetinputalts[0]);
+                        var input = jobset.jobsetinputs[inputName];
+                        table.push([ inputName, input.jobsetinputalts[0] ]);
                     }
+
+                    console.log(table.toString());
                 }
 
                 console.log("\nEvaluation errors");
@@ -349,10 +416,14 @@ function queryEvaluations(hydraSettings, projectId, jobsetId, callback) {
             } else {
                 var evaluations = evaluationView.evals;
 
+                var table = new Table({
+                    head: [ "ID", "Changes" ]
+                });
+
                 for(var i = 0; i < evaluations.length; i++) {
                     var evaluation = evaluations[i];
 
-                    var line = evaluation.id + ": ";
+                    var line = "";
                     var first = true;
 
                     for(var inputName in evaluation.jobsetevalinputs) {
@@ -369,8 +440,10 @@ function queryEvaluations(hydraSettings, projectId, jobsetId, callback) {
                         }
                     }
 
-                    console.log(line);
+                    table.push([ evaluation.id, line ]);
                 }
+
+                console.log(table.toString());
             }
 
             console.log("\nSome suggestions:");
@@ -403,27 +476,46 @@ function queryEvaluation(hydraSettings, evalId, callback) {
                 }
 
                 if(Array.isArray(evaluation.builds) && evaluation.builds.length > 0) {
-                    console.log("Builds");
+                    console.log("\nBuilds");
                     console.log("======");
 
+                    var table = new Table({
+                        head: [ "Builds" ]
+                    });
+
                     for(var i = 0; i < evaluation.builds.length; i++) {
-                        var build = evaluation.builds[i];
-                        console.log(build);
+                        table.push([ evaluation.builds[i] ]);
                     }
+
+                    console.log(table.toString());
                 }
 
                 if(Object.keys(evaluation.jobsetevalinputs).length > 0) {
                     console.log("\nInputs");
                     console.log("======");
 
+                    var table = new Table({
+                        head: [ "Name", "Type", "Value", "Revision" ]
+                    });
+
                     for(var inputName in evaluation.jobsetevalinputs) {
                         var input = evaluation.jobsetevalinputs[inputName];
+                        var value;
 
-                        console.log("name: "+inputName);
-                        console.log("type: "+input.type);
-                        console.log("value: "+(input.value ? input.value : input.uri));
-                        console.log("revision: "+input.revision + "\n");
+                        if(input.value) {
+                            value = input.value;
+                        } else if(input.uri) {
+                            value = input.uri;
+                        } else {
+                            value = "";
+                        }
+
+                        var revision = input.revision ? input.revision : "";
+
+                        table.push([ inputName, input.type, value, revision ]);
                     }
+
+                    console.log(table.toString());
                 }
 
                 console.log("Some suggestions:");
@@ -452,23 +544,33 @@ function queryBuild(hydraSettings, buildId, callback) {
             } else {
                 console.log("Build ID: "+build.id+"\n");
 
-                console.log("Finished: "+build.finished);
-                console.log("Status: "+build.buildstatus); // 0: success, 1: failed, 2: dependency failed
-                console.log("System: "+build.system);
-                console.log("Nix name: "+build.nixname);
-                console.log("Part of evaluations: "+JSON.stringify(build.jobsetevals));
-                console.log("Duration: "+(build.stoptime - build.timestamp));
-                console.log("Finished at: "+build.stoptime);
+                var table = new Table();
+                table.push({ "Finished": build.finished });
+                table.push({ "Status": displayBuildStatus(build.buildstatus) });
+                table.push({ "System": build.system });
+                table.push({ "Nix name": build.nixname });
+                table.push({ "Part of evaluations": JSON.stringify(build.jobsetevals) });
+
+                if(build.stoptime && build.timestamp) {
+                    table.push({ "Duration": (build.stoptime - build.timestamp) + " seconds" });
+                    table.push({ "Finished at": displayDateAndTime(build.stoptime) });
+                }
+                console.log(table.toString());
 
                 if(Object.keys(build.buildproducts).length > 0) {
                     console.log("\nBuild products");
                     console.log("==============");
 
+                    var table = new Table({
+                        head: [ "ID", "Type", "Name" ]
+                    });
+
                     for(var buildProductId in build.buildproducts) {
                         var buildproduct = build.buildproducts[buildProductId];
-
-                        console.log(buildProductId+": (" + buildproduct.type + ") "+buildproduct.name);
+                        table.push([ buildProductId, buildproduct.type, buildproduct.name ]);
                     }
+
+                    console.log(table.toString());
                 }
 
                 console.log("\nDetails");
@@ -476,10 +578,16 @@ function queryBuild(hydraSettings, buildId, callback) {
                 console.log("Derivation store path: "+build.drvpath);
                 console.log("Output store paths:");
 
+                var table = new Table({
+                    head: [ "Name", "Path" ]
+                });
+
                 for(var outputName in build.buildoutputs) {
                     var buildoutput = build.buildoutputs[outputName];
-                    console.log(outputName + " = " + buildoutput.path);
+                    table.push([ outputName, buildoutput.path ]);
                 }
+
+                console.log(table.toString());
 
                 console.log("\nSome suggestions:");
                 console.log("=================");
@@ -496,8 +604,6 @@ function queryBuild(hydraSettings, buildId, callback) {
         }
     ], callback);
 }
-
-
 
 exports.queryBuild = queryBuild;
 
@@ -551,10 +657,16 @@ function bumpBuildPriority(hydraSettings, buildId, callback) {
 exports.bumpBuildPriority = bumpBuildPriority;
 
 function displayQueue(hydraSettings, queue) {
+    var table = new Table({
+        head: [ "ID", "Project", "Jobset", "Job", "Queued at", "Nix name", "System" ]
+    });
+
     for(var i = 0; i < queue.length; i++) {
         var job = queue[i];
-        console.log(job.id + " | " + job.project + ":" + job.jobset + ":" + job.job + " | " + job.timestamp  + " | " + job.nixname + " | " + job.system);
+        table.push([ job.id, job.project, job.jobset, job.job, displayDateAndTime(job.timestamp), job.nixname, job.system ]);
     }
+
+    console.log(table.toString());
 
     console.log("\nSome suggestions:");
     console.log("=================");
