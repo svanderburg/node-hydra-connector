@@ -218,26 +218,56 @@ function modifyProject(hydraSettings, projectId, callback) {
 
     slasp.sequence([
         function(callback) {
-            prompt.get([
-                {
-                    name: 'displayname'
-                }, {
-                    name: 'description'
-                }, {
-                    name: 'homepage'
-                }, {
-                    name: 'visible',
-                    message: 'visible should be 0 or 1',
-                    required: true
-                }, {
-                    name: 'enabled',
-                    message: 'enabled should be 0 or 1',
-                    required: true
+            var schema = {
+                type: "object",
+                properties: {
+                    name: {
+                        description: "Project ID",
+                        type: "string",
+                        default: projectId
+                    },
+                    displayname: {
+                        description: "Display name",
+                        type: "string"
+                    },
+                    description: {
+                        description: "Description",
+                        type: "string"
+                    },
+                    homepage: {
+                        description: "Homepage",
+                        type: "string"
+                    },
+                    visible: {
+                        description: "Visible",
+                        type: "integer",
+                        message: "Visible must be 0 or 1",
+                        minimum: 0,
+                        maximum: 1
+                    },
+                    enabled: {
+                        description: "Enabled",
+                        type: "integer",
+                        message: "Enabled must be 0 or 1",
+                        minimum: 0,
+                        maximum: 1
+                    }
                 }
-            ], callback);
+            };
+            prompt.get(schema, callback);
         },
 
         function(callback, properties) {
+            // Delete boolean values that are not true
+            if(properties.visible !== 1) {
+                delete properties.visible;
+            }
+
+            if(properties.enabled !== 1) {
+                delete properties.enabled;
+            }
+
+            // Create or update the project
             hydraConnector.createOrUpdateProject(projectId, properties, callback);
         }
     ], callback);
@@ -316,36 +346,76 @@ function modifyJobset(hydraSettings, projectId, jobsetId, callback) {
 
     slasp.sequence([
         function(callback) {
-            prompt.get([
-                {
-                    name: 'name'
-                }, {
-                    name: 'description'
-                }, {
-                    name: 'nixexprinput'
-                }, {
-                    name: 'nixexprpath'
-                }, {
-                    name: 'emailoverride'
-                }, {
-                    name: 'visible',
-                    message: 'visible should be 0 or 1',
-                    required: true
-                }, {
-                    name: 'enabled',
-                    message: 'enabled should be 0 or 1',
-                    required: true
-                }, {
-                    name: 'keepnr'
-                }, {
-                    name: 'checkinterval'
-                }, {
-                    name: 'schedulingshares'
+            var schema = {
+                type: "object",
+                properties: {
+                    name: {
+                        description: "Name",
+                        type: "string",
+                        default: jobsetId
+                    },
+                    description: {
+                        description: "Description",
+                        type: "string"
+                    },
+                    nixexprinput: {
+                        description: "Nix expression input name",
+                        type: "string"
+                    },
+                    nixexprpath: {
+                        description: "Path to Nix expression",
+                        type: "string"
+                    },
+                    emailoverride: {
+                        description: "Email override",
+                        type: "string"
+                    },
+                    visible: {
+                        description: "Visible",
+                        type: "integer",
+                        message: "Visible must be 0 or 1",
+                        minimum: 0,
+                        maximum: 1
+                    },
+                    enabled: {
+                        description: "Enabled",
+                        type: "integer",
+                        message: "Enabled must be 0 or 1",
+                        minimum: 0,
+                        maximum: 1
+                    },
+                    keepnr: {
+                        description: "Number of builds to keep",
+                        type: "integer",
+                        minimum: 0
+                    },
+                    checkinterval: {
+                        description: "Check interval",
+                        type: "integer",
+                        minimum: 0
+                    },
+                    schedulingshares: {
+                        description: "Scheduling shares",
+                        type: "integer",
+                        minimum: 0
+                    }
                 }
-            ], callback);
+            };
+
+            prompt.get(schema, callback);
         },
 
         function(callback, properties) {
+            // Delete boolean values that are not true
+
+            if(properties.visible !== 1) {
+                delete properties.visible;
+            }
+
+            if(properties.enabled !== 1) {
+                delete properties.enabled;
+            }
+
             jobsetProperties = properties;
 
             console.log("\nConfiguring inputs. Specify an empty name to stop\n");
@@ -353,17 +423,23 @@ function modifyJobset(hydraSettings, projectId, jobsetId, callback) {
             var input;
 
             slasp.doWhilst(function(callback) {
-                prompt.get([
-                    {
-                        name: 'name'
-                    },
-                    {
-                        name: 'type'
-                    },
-                    {
-                        name: 'value'
+                var schema = {
+                    type: "object",
+                    properties: {
+                        name: {
+                            description: "Input name"
+                        },
+                        type: {
+                            description: "Input type",
+                            pattern: "^(boolean|build|bzr|darcs|eval|git|githubpulls|hg|nix|path|string|svn|sysbuild)$"
+                        },
+                        value: {
+                            description: "Input value"
+                        }
                     }
-                ], function(err, results) {
+                };
+
+                prompt.get(schema, function(err, results) {
                     console.log();
 
                     if(err) {
