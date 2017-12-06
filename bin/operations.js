@@ -3,6 +3,8 @@ var prompt = require('prompt');
 var Table = require('cli-table');
 var HydraConnector = require('../lib/HydraConnector.js').HydraConnector;
 
+// Display utility functions
+
 function prefixZero(value) {
     if(value < 10) {
         return "0"+value;
@@ -26,28 +28,48 @@ function displayDateAndTime(timestamp) {
     return day + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec;
 }
 
-function displayBuildStatus(buildstatus) {
-    if(buildstatus === null) {
-        return "";
-    } else {
-        switch(buildstatus) {
-            case 0:
-                return "Success";
-            case 1:
-                return "Failed";
-            case 2:
-                return "Dependency failed";
-            default:
-                return "Unknown status: "+buildstatus;
-        }
-    }
-}
-
+/* Constructs a hydra connector from the general hydra settings */
 function constructHydraConnector(hydraSettings) {
     var hydraConnector = new HydraConnector(hydraSettings.url);
     hydraConnector.hydraSession = hydraSettings.hydraSession;
     return hydraConnector;
 }
+
+/*
+ * Generic function that queries data, displays the data (as JSON or a custom
+ * representation) and displays a number of command-line instruction suggestions
+ */
+function queryAndDisplayData(hydraSettings, queryData, displayData, suggestions, callback) {
+    var hydraConnector = constructHydraConnector(hydraSettings);
+
+    slasp.sequence([
+        function(callback) {
+            queryData(hydraConnector, callback);
+        },
+
+        function(callback, data) {
+            if(hydraSettings.showJSON) {
+                console.log(JSON.stringify(data, null, 2));
+            } else {
+                displayData(data);
+
+                if(Array.isArray(suggestions) && suggestions.length > 0) {
+                    console.log("\nSome suggestions:");
+                    console.log("=================");
+
+                    for(var i = 0; i < suggestions.length; i++) {
+                        var suggestion = suggestions[i];
+                        console.log(hydraSettings.executable + " " + suggestion);
+                    }
+                }
+
+                callback();
+            }
+        }
+    ], callback);
+}
+
+// CLI operations
 
 function login(hydraSettings, callback) {
     var hydraConnector = constructHydraConnector(hydraSettings);
@@ -103,35 +125,6 @@ function logout(hydraSettings, callback) {
 
 exports.logout = logout;
 
-function queryAndDisplayData(hydraSettings, queryData, displayData, suggestions, callback) {
-    var hydraConnector = constructHydraConnector(hydraSettings);
-
-    slasp.sequence([
-        function(callback) {
-            queryData(hydraConnector, callback);
-        },
-
-        function(callback, data) {
-            if(hydraSettings.showJSON) {
-                console.log(JSON.stringify(data, null, 2));
-            } else {
-                displayData(data);
-
-                if(Array.isArray(suggestions) && suggestions.length > 0) {
-                    console.log("\nSome suggestions:");
-                    console.log("=================");
-
-                    for(var i = 0; i < suggestions.length; i++) {
-                        var suggestion = suggestions[i];
-                        console.log(hydraSettings.executable + " " + suggestion);
-                    }
-                }
-
-                callback();
-            }
-        }
-    ], callback);
-}
 
 function queryProjects(hydraSettings, callback) {
     queryAndDisplayData(hydraSettings, function(hydraConnector, callback) {
@@ -404,6 +397,8 @@ function modifyJobset(hydraSettings, projectId, jobsetId, callback) {
                 delete properties.enabled;
             }
 
+            // Configure inputs
+
             jobsetProperties = properties;
 
             console.log("\nConfiguring inputs. Specify an empty name to stop\n");
@@ -574,7 +569,7 @@ function queryBuild(hydraSettings, buildId, callback) {
 
         var table = new Table();
         table.push({ "Finished": build.finished });
-        table.push({ "Status": displayBuildStatus(build.buildstatus) });
+        table.push({ "Status": HydraConnector.determineBuildStatus(build.buildstatus) });
         table.push({ "System": build.system });
         table.push({ "Nix name": build.nixname });
         table.push({ "Part of evaluations": JSON.stringify(build.jobsetevals) });

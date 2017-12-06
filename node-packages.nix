@@ -40,6 +40,15 @@ let
         sha1 = "8e57123c396ab988897fb327fd3aedc3e735e4fe";
       };
     };
+    "cli-table-0.3.1" = {
+      name = "cli-table";
+      packageName = "cli-table";
+      version = "0.3.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/cli-table/-/cli-table-0.3.1.tgz";
+        sha1 = "f53b05266a8b1a0b934b3d0821e6e2dc5914ae23";
+      };
+    };
     "mocha-4.0.1" = {
       name = "mocha";
       packageName = "mocha";
@@ -562,13 +571,13 @@ let
         sha1 = "59c128e0dc5ce410201151194eeb9cbf858650f6";
       };
     };
-    "marked-0.3.6" = {
+    "marked-0.3.7" = {
       name = "marked";
       packageName = "marked";
-      version = "0.3.6";
+      version = "0.3.7";
       src = fetchurl {
-        url = "https://registry.npmjs.org/marked/-/marked-0.3.6.tgz";
-        sha1 = "b2c6c618fccece4ef86c4fc6cb8a7cbf5aeda8d7";
+        url = "https://registry.npmjs.org/marked/-/marked-0.3.7.tgz";
+        sha512 = "2yx1jx6vzjxzhhq2qcsrh0300d452bdl8pvsj0w1ajsxhcqvsba8mmx1lawxx025mzqbvwp5pvay8sff0pg3vbid5whlqdmlgi0y4fc";
       };
     };
     "requizzle-0.2.1" = {
@@ -647,13 +656,14 @@ let
   args = {
     name = "node-hydra-connector";
     packageName = "node-hydra-connector";
-    version = "0.0.2";
+    version = "0.0.3";
     src = ./.;
     dependencies = [
       sources."node-rest-client-3.1.0"
       sources."optparse-1.0.5"
       sources."slasp-0.0.4"
       sources."prompt-1.0.0"
+      sources."cli-table-0.3.1"
       sources."mocha-4.0.1"
       sources."assert-1.4.1"
       sources."jsdoc-3.5.5"
@@ -706,7 +716,7 @@ let
       sources."catharsis-0.8.9"
       sources."js2xmlparser-3.0.0"
       sources."klaw-2.0.0"
-      sources."marked-0.3.6"
+      sources."marked-0.3.7"
       sources."requizzle-0.2.1"
       sources."strip-json-comments-2.0.1"
       sources."taffydb-2.6.2"
