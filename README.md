@@ -3,6 +3,19 @@ node-hydra-connector
 Remotely control [Hydra](http://nixos.org/hydra): a Nix-based continuous
 integration server by invoking its REST API from a Node.js application.
 
+Installation
+============
+There are two ways this package can installed.
+
+To install this package through the Nix package manager, obtain a copy of
+[Nixpkgs](http://nixos.org/nixpkgs) and run:
+
+    $ nix-env -f '<nixpkgs>' -iA nodePackages.node-hydra-connector
+
+Alternatively, this package can also be installed through NPM by running:
+
+    $ npm install -g node-hydra-connector
+
 API usage
 =========
 Instantiate a `HydraConnector` object and then call any of the supported

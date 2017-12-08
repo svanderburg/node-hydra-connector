@@ -136,7 +136,10 @@ function queryProjects(hydraSettings, callback) {
 
         for(var i = 0; i < projects.length; i++) {
             var project = projects[i];
-            table.push([project.name, project.displayname, project.description]);
+
+            if(project.hidden !== 1 || hydraSettings.displayInvisible) {
+                table.push([project.name, project.displayname, project.description]);
+            }
         }
 
         console.log(table.toString());
@@ -572,7 +575,7 @@ function queryBuild(hydraSettings, buildId, callback) {
         table.push({ "Status": HydraConnector.determineBuildStatus(build.buildstatus) });
         table.push({ "System": build.system });
         table.push({ "Nix name": build.nixname });
-        table.push({ "Part of evaluations": JSON.stringify(build.jobsetevals) });
+        table.push({ "Part of evaluations": JSON.stringify(build.jobsetevals, null, 2) });
 
         if(build.stoptime && build.timestamp) {
             table.push({ "Duration": (build.stoptime - build.timestamp) + " seconds" });

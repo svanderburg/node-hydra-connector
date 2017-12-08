@@ -90,6 +90,7 @@ var switches = [
     ['--clear-failed-cache', 'Clears the failed builds cache'],
     ['--clear-non-current', 'Clears all non current builds from the queue'],
     ['--json', 'Display the output in JSON format'],
+    ['--display-invisible', 'Display invisible entries'],
     ['--modify', 'Creates or updates a record'],
     ['--delete', 'Deletes a record']
 ];
@@ -108,6 +109,7 @@ var buildProductId = null;
 var hydraSettings = {
     url: null,
     showJSON: false,
+    displayInvisible: false,
     executable: ""
 };
 
@@ -139,6 +141,10 @@ parser.on('url', function(arg, value) {
 
 parser.on('json', function(arg, value) {
     hydraSettings.showJSON = true;
+});
+
+parser.on('display-invisible', function(arg, value) {
+    hydraSettings.displayInvisible = true;
 });
 
 parser.on('projects', function(arg, value) {
